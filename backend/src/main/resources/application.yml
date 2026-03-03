@@ -1,0 +1,27 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/greenscout
+    username: ${USER}
+    password:
+  jpa:
+    database-platform: org.hibernate.spatial.dialect.postgis.PostgisPG10Dialect
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope: email, profile
+
+server:
+  servlet:
+    session:
+      cookie:
+        same-site: lax
+        http-only: true

@@ -10,6 +10,7 @@ export interface ActivityLocation {
   name: string;
   description: string;
   category: string;
+  osmId?: number;
   location: {
     type: "Point";
     coordinates: [number, number]; // [lon, lat]

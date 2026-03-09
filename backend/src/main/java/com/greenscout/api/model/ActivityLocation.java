@@ -3,6 +3,8 @@ package com.greenscout.api.model;
 import jakarta.persistence.*;
 import org.locationtech.jts.geom.Point;
 
+import java.time.Instant;
+
 @Entity
 @Table(name = "activity_location")
 public class ActivityLocation {
@@ -22,6 +24,11 @@ public class ActivityLocation {
     @Column(nullable = false, columnDefinition = "geometry(Point, 4326)")
     private Point location;
 
+    @Column(unique = true)
+    private Long osmId;
+
+    private Instant fetchedAt;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -36,4 +43,10 @@ public class ActivityLocation {
 
     public Point getLocation() { return location; }
     public void setLocation(Point location) { this.location = location; }
+
+    public Long getOsmId() { return osmId; }
+    public void setOsmId(Long osmId) { this.osmId = osmId; }
+
+    public Instant getFetchedAt() { return fetchedAt; }
+    public void setFetchedAt(Instant fetchedAt) { this.fetchedAt = fetchedAt; }
 }

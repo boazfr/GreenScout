@@ -25,3 +25,8 @@ server:
       cookie:
         same-site: lax
         http-only: true
+
+greenscout:
+  overpass:
+    url: https://overpass-api.de/api/interpreter
+    cache-ttl-hours: 24

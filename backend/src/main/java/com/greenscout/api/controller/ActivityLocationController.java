@@ -1,7 +1,7 @@
 package com.greenscout.api.controller;
 
 import com.greenscout.api.model.ActivityLocation;
-import com.greenscout.api.repository.ActivityLocationRepository;
+import com.greenscout.api.service.LocationService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -10,10 +10,10 @@ import java.util.List;
 @RequestMapping("/api/locations")
 public class ActivityLocationController {
 
-    private final ActivityLocationRepository locationRepository;
+    private final LocationService locationService;
 
-    public ActivityLocationController(ActivityLocationRepository locationRepository) {
-        this.locationRepository = locationRepository;
+    public ActivityLocationController(LocationService locationService) {
+        this.locationService = locationService;
     }
 
     @GetMapping("/nearby")
@@ -21,6 +21,6 @@ public class ActivityLocationController {
             @RequestParam double lat,
             @RequestParam double lon,
             @RequestParam(defaultValue = "5000") double radius) {
-        return locationRepository.findNearby(lat, lon, radius);
+        return locationService.getNearby(lat, lon, radius);
     }
 }

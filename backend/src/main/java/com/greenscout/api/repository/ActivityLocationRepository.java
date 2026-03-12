@@ -25,6 +25,22 @@ public interface ActivityLocationRepository extends JpaRepository<ActivityLocati
             @Param("lon") double lon,
             @Param("radiusMeters") double radiusMeters);
 
+    @Query(value = """
+        SELECT * FROM activity_location
+        WHERE category = :category
+        AND ST_DWithin(
+            location::geography,
+            ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)::geography,
+            :radiusMeters
+        )
+        ORDER BY location::geography <-> ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)::geography
+        """, nativeQuery = true)
+    List<ActivityLocation> findNearbyByCategory(
+            @Param("lat") double lat,
+            @Param("lon") double lon,
+            @Param("radiusMeters") double radiusMeters,
+            @Param("category") String category);
+
     Optional<ActivityLocation> findByOsmId(Long osmId);
 
     @Query(value = """

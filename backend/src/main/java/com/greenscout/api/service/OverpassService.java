@@ -27,7 +27,18 @@ public class OverpassService {
             "park", "park",
             "nature_reserve", "nature",
             "viewpoint", "viewpoint",
-            "picnic_site", "picnic"
+            "picnic_site", "picnic",
+            "hiking", "hike"
+    );
+
+    private static final Map<String, String> CATEGORY_LABELS = Map.of(
+            "playground", "Playground",
+            "garden", "Garden",
+            "park", "Park",
+            "nature", "Nature Reserve",
+            "viewpoint", "Viewpoint",
+            "picnic", "Picnic Site",
+            "hike", "Hiking Trail"
     );
 
     private final RestClient restClient;
@@ -84,9 +95,13 @@ public class OverpassService {
                   nwr["leisure"="nature_reserve"](around:%d,%f,%f);
                   nwr["tourism"="viewpoint"](around:%d,%f,%f);
                   nwr["tourism"="picnic_site"](around:%d,%f,%f);
+                  relation["route"="hiking"](around:%d,%f,%f);
+                  way["highway"="path"]["sac_scale"](around:%d,%f,%f);
                 );
                 out center tags;
                 """,
+                radius, lat, lon,
+                radius, lat, lon,
                 radius, lat, lon,
                 radius, lat, lon,
                 radius, lat, lon,
@@ -98,16 +113,15 @@ public class OverpassService {
     private void processElement(JsonNode element) {
         try {
             JsonNode tags = element.path("tags");
-            if (!tags.has("name")) {
-                return;
-            }
 
             long osmId = element.path("id").asLong();
-            String name = tags.path("name").asText();
             String category = resolveCategory(tags);
             if (category == null) {
                 return;
             }
+
+            String name = tags.has("name") ? tags.path("name").asText()
+                    : CATEGORY_LABELS.getOrDefault(category, category);
 
             double elLat = resolveCoordinate(element, "lat");
             double elLon = resolveCoordinate(element, "lon");
@@ -148,6 +162,14 @@ public class OverpassService {
         String tourism = tags.path("tourism").asText(null);
         if (tourism != null && TAG_TO_CATEGORY.containsKey(tourism)) {
             return TAG_TO_CATEGORY.get(tourism);
+        }
+        String route = tags.path("route").asText(null);
+        if ("hiking".equals(route)) {
+            return TAG_TO_CATEGORY.get("hiking");
+        }
+        String highway = tags.path("highway").asText(null);
+        if ("path".equals(highway) && tags.has("sac_scale")) {
+            return TAG_TO_CATEGORY.get("hiking");
         }
         return null;
     }

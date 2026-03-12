@@ -6,8 +6,8 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 export default function Navbar({ user }: { user: User }) {
   return (
-    <nav className="absolute top-0 left-0 right-0 z-[1000] flex items-center justify-between px-5 py-3">
-      <span className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-md">
+    <nav className="flex items-center justify-between px-5 py-3 bg-gray-50 border-b border-gray-200">
+      <span className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-md">
         greenScout
       </span>
       <div className="flex items-center gap-2 rounded-full bg-white py-1.5 pl-3 pr-1.5 shadow-md">

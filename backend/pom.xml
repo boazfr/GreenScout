@@ -61,13 +61,6 @@
             <version>${jts.version}</version>
         </dependency>
 
-        <!-- Jackson JTS serialization (Point → GeoJSON) -->
-        <dependency>
-            <groupId>com.bedatadriven</groupId>
-            <artifactId>jackson-datatype-jts</artifactId>
-            <version>2.4</version>
-        </dependency>
-
         <!-- Flyway -->
         <dependency>
             <groupId>org.flywaydb</groupId>

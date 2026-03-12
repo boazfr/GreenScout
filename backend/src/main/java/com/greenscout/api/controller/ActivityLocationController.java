@@ -1,6 +1,6 @@
 package com.greenscout.api.controller;
 
-import com.greenscout.api.model.ActivityLocation;
+import com.greenscout.api.dto.ActivityLocationDto;
 import com.greenscout.api.service.LocationService;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,10 +17,14 @@ public class ActivityLocationController {
     }
 
     @GetMapping("/nearby")
-    public List<ActivityLocation> nearby(
+    public List<ActivityLocationDto> nearby(
             @RequestParam double lat,
             @RequestParam double lon,
-            @RequestParam(defaultValue = "5000") double radius) {
-        return locationService.getNearby(lat, lon, radius);
+            @RequestParam(defaultValue = "5000") double radius,
+            @RequestParam(required = false) String category) {
+        return locationService.getNearby(lat, lon, radius, category)
+                .stream()
+                .map(ActivityLocationDto::from)
+                .toList();
     }
 }

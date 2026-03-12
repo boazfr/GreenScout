@@ -23,7 +23,7 @@ public class LocationService {
         this.overpassService = overpassService;
     }
 
-    public List<ActivityLocation> getNearby(double lat, double lon, double radiusMeters) {
+    public List<ActivityLocation> getNearby(double lat, double lon, double radiusMeters, String category) {
         Instant cutoff = Instant.now().minus(cacheTtlHours, ChronoUnit.HOURS);
         long recentCount = repository.countRecentlyFetchedNearby(lat, lon, radiusMeters, cutoff);
 
@@ -31,6 +31,9 @@ public class LocationService {
             overpassService.fetchAndCacheNearby(lat, lon, radiusMeters);
         }
 
+        if (category != null && !category.isBlank()) {
+            return repository.findNearbyByCategory(lat, lon, radiusMeters, category);
+        }
         return repository.findNearby(lat, lon, radiusMeters);
     }
 }

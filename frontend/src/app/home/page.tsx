@@ -7,8 +7,11 @@ import Navbar from "@/components/Navbar";
 import MapWrapper from "@/components/MapWrapper";
 import LocationCard from "@/components/LocationCard";
 import LocationListCard from "@/components/LocationListCard";
+import CategoryFilter from "@/components/CategoryFilter";
+import RadiusSlider from "@/components/RadiusSlider";
 
 const DEFAULT_CENTER: [number, number] = [32.0853, 34.7818]; // Tel Aviv
+const DEFAULT_RADIUS_KM = 10;
 
 export default function HomePage() {
   const [user, setUser] = useState<User | null>(null);
@@ -16,7 +19,11 @@ export default function HomePage() {
   const [center, setCenter] = useState<[number, number]>(DEFAULT_CENTER);
   const [selected, setSelected] = useState<ActivityLocation | null>(null);
   const [highlightedId, setHighlightedId] = useState<number | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [radiusKm, setRadiusKm] = useState(DEFAULT_RADIUS_KM);
   const [loading, setLoading] = useState(true);
+  const centerRef = useRef<[number, number]>(DEFAULT_CENTER);
+  const radiusRef = useRef(DEFAULT_RADIUS_KM);
   const cardRefs = useRef<Record<number, HTMLDivElement>>({});
 
   useEffect(() => {
@@ -34,20 +41,43 @@ export default function HomePage() {
       (pos) => {
         const { latitude, longitude } = pos.coords;
         setCenter([latitude, longitude]);
-        fetchLocations(latitude, longitude);
+        centerRef.current = [latitude, longitude];
+        fetchLocations(latitude, longitude, null, DEFAULT_RADIUS_KM);
       },
       () => {
-        fetchLocations(DEFAULT_CENTER[0], DEFAULT_CENTER[1]);
+        fetchLocations(DEFAULT_CENTER[0], DEFAULT_CENTER[1], null, DEFAULT_RADIUS_KM);
       }
     );
   }, [user]);
 
-  function fetchLocations(lat: number, lon: number) {
-    apiFetch<ActivityLocation[]>(
-      `/api/locations/nearby?lat=${lat}&lon=${lon}&radius=10000`
-    )
+  function fetchLocations(lat: number, lon: number, category: string | null, km: number) {
+    const params = new URLSearchParams({
+      lat: String(lat),
+      lon: String(lon),
+      radius: String(km * 1000),
+    });
+    if (category) params.set("category", category);
+
+    apiFetch<ActivityLocation[]>(`/api/locations/nearby?${params}`)
       .then(setLocations)
       .finally(() => setLoading(false));
+  }
+
+  function handleCategoryChange(category: string | null) {
+    setActiveCategory(category);
+    setSelected(null);
+    setHighlightedId(null);
+    setLoading(true);
+    fetchLocations(centerRef.current[0], centerRef.current[1], category, radiusRef.current);
+  }
+
+  function handleRadiusChange(km: number) {
+    setRadiusKm(km);
+    radiusRef.current = km;
+    setSelected(null);
+    setHighlightedId(null);
+    setLoading(true);
+    fetchLocations(centerRef.current[0], centerRef.current[1], activeCategory, km);
   }
 
   function handleMarkerSelect(location: ActivityLocation | null) {
@@ -76,57 +106,62 @@ export default function HomePage() {
 
   return (
     <div className="flex h-screen w-screen flex-col overflow-hidden">
-      {/* Map section */}
-      <div className="relative h-[60vh] flex-shrink-0">
-        {loading ? (
-          <div className="flex h-full items-center justify-center bg-gray-50">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-300 border-t-gray-900" />
-          </div>
-        ) : (
-          <MapWrapper
-            center={center}
-            locations={locations}
-            onSelectLocation={handleMarkerSelect}
-            highlightedId={highlightedId}
-          />
-        )}
-
-        {/* Navbar floating over the map */}
-        <div className="absolute top-0 left-0 right-0 z-[1000]">
-          <Navbar user={user} />
-        </div>
-
-        {/* Selected location card overlay */}
-        {selected && (
-          <LocationCard
-            location={selected}
-            onClose={() => {
-              setSelected(null);
-              setHighlightedId(null);
-            }}
-          />
-        )}
+      {/* Navbar */}
+      <div className="z-[1000] flex-shrink-0">
+        <Navbar user={user} />
       </div>
 
-      {/* Scrollable list section */}
-      <div className="flex-1 overflow-y-auto bg-gray-50">
-        <div className="px-4 py-3">
-          <h2 className="text-sm font-medium text-gray-500">
-            {locations.length} {locations.length === 1 ? "place" : "places"} nearby
-          </h2>
+      {/* Main content: sidebar left, map right */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left panel: filters + list */}
+        <div className="w-96 flex-shrink-0 overflow-y-auto bg-gray-50 border-r border-gray-200">
+          <CategoryFilter selected={activeCategory} onChange={handleCategoryChange} />
+          <RadiusSlider radiusKm={radiusKm} onChange={handleRadiusChange} />
+          <div className="pb-1 text-center">
+            <h2 className="text-sm font-medium text-gray-500">
+              {locations.length} {locations.length === 1 ? "place" : "places"} within {radiusKm} km
+            </h2>
+          </div>
+          <div className="flex flex-col gap-2 px-4 pb-4">
+            {locations.map((loc) => (
+              <LocationListCard
+                key={loc.id}
+                ref={(el) => {
+                  if (el) cardRefs.current[loc.id] = el;
+                }}
+                location={loc}
+                isHighlighted={highlightedId === loc.id}
+                onClick={() => handleCardClick(loc)}
+              />
+            ))}
+          </div>
         </div>
-        <div className="flex flex-col gap-2 px-4 pb-4">
-          {locations.map((loc) => (
-            <LocationListCard
-              key={loc.id}
-              ref={(el) => {
-                if (el) cardRefs.current[loc.id] = el;
-              }}
-              location={loc}
-              isHighlighted={highlightedId === loc.id}
-              onClick={() => handleCardClick(loc)}
+
+        {/* Right: map */}
+        <div className="relative flex-1">
+          {loading ? (
+            <div className="flex h-full items-center justify-center bg-gray-50">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-300 border-t-gray-900" />
+            </div>
+          ) : (
+            <MapWrapper
+              center={center}
+              locations={locations}
+              onSelectLocation={handleMarkerSelect}
+              highlightedId={highlightedId}
             />
-          ))}
+          )}
+
+          {/* Selected location card overlay */}
+          {selected && (
+            <LocationCard
+              location={selected}
+              onClose={() => {
+                setSelected(null);
+                setHighlightedId(null);
+              }}
+            />
+          )}
         </div>
       </div>
     </div>
